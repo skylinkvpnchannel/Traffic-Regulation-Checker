@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="my" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ယာဉ်မောင်းနှင်ခွင့် စစ်ဆေးရန်</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&amp;display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Padauk', sans-serif; }
+    .vehicle-btn { transition: all 0.2s ease; }
+    .vehicle-btn:hover { transform: translateY(-2px); }
+    .vehicle-btn.selected { ring: 2px; ring-offset: 2px; }
+    .result-card { animation: fadeIn 0.3s ease-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .pulse-allowed { animation: pulseGreen 2s infinite; }
+    @keyframes pulseGreen {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+    }
+    .pulse-restricted { animation: pulseRed 2s infinite; }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+    input[type="date"] {
+      box-sizing: border-box !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      overflow: visible !important;
+      padding: 12px 4px !important;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      cursor: pointer;
+      border-radius: 4px;
+      background: #f59e0b;
+      padding: 0;
+      margin-left: auto;
+      margin-right: 4px;
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    input[type="date"]::-webkit-outer-spin-button,
+    input[type="date"]::-webkit-inner-spin-button {
+      display: none;
+    }
+  </style>
+  <style>body { box-sizing: border-box; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+  <div id="app" class="h-full overflow-auto">
+   <div class="min-h-full w-full max-w-lg mx-auto px-4 py-6 flex flex-col">
+    <!-- Header -->
+    <header class="text-center mb-6">
+     <div class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl mb-3 shadow-lg">
+      <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h8m-8 4h8m-4 4v4m-6 0h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+     </div>
+     <h1 id="app-title" class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-orange-300">ယာဉ်မောင်းနှင်ခွင့် စစ်ဆေးရန်</h1>
+     <p class="text-slate-400 text-sm mt-1">Traffic Regulation Checker</p>
+    </header><!-- Date Picker -->
+    <section class="bg-slate-800/50 backdrop-blur rounded-2xl p-4 mb-4 border border-slate-700/50">
+     <label class="block text-amber-300 text-sm font-medium mb-2"> 📅 ရက်စွဲရွေးချယ်ရန် </label> <input type="date" id="dateInput" class="w-full bg-slate-700 border border-slate-600 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-lg">
+     <p id="dateDisplay" class="text-slate-400 text-sm mt-2 text-center"></p>
+    </section><!-- Vehicle Type Selection -->
+    <section class="bg-slate-800/50 backdrop-blur rounded-2xl p-4 mb-4 border border-slate-700/50">
+     <label class="block text-amber-300 text-sm font-medium mb-3"> 🚗 ယာဉ်အမျိုးအစား ရွေးချယ်ရန် </label> <!-- Restricted Vehicles -->
+     <p class="text-xs text-red-400 mb-2 font-medium">⚠️ ကန့်သတ်ယာဉ်များ (Odd/Even စည်းမျဉ်းနှင့် သက်ဆိုင်သည်)</p>
+     <div class="grid grid-cols-2 gap-2 mb-4">
+      <button onclick="selectVehicle('private_car')" data-vehicle="private_car" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-red-500/30 rounded-xl p-3 text-left transition-all"> <span class="text-2xl">🚘</span> <p class="text-sm mt-1">အိမ်စီးကား</p></button> <button onclick="selectVehicle('private_motorcycle')" data-vehicle="private_motorcycle" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-red-500/30 rounded-xl p-3 text-left transition-all"> <span class="text-2xl">🏍️</span> <p class="text-sm mt-1">ကိုယ်ပိုင်ဆိုင်ကယ်</p></button>
+     </div><!-- Exempt Vehicles -->
+     <p class="text-xs text-green-400 mb-2 font-medium">✅ ကင်းလွတ်ခွင့်ရယာဉ်များ (နေ့တိုင်း မောင်းခွင့်ရှိသည်)</p>
+     <div class="grid grid-cols-3 gap-2">
+      <button onclick="selectVehicle('ev')" data-vehicle="ev" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">⚡</span> <p class="text-xs mt-1">လျှပ်စစ်ယာဉ်</p></button> <button onclick="selectVehicle('taxi')" data-vehicle="taxi" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">🚕</span> <p class="text-xs mt-1">အငှားယာဉ်</p></button> <button onclick="selectVehicle('delivery')" data-vehicle="delivery" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">📦</span> <p class="text-xs mt-1">ဆိုင်ကယ်ကယ်ရီ</p></button> <button onclick="selectVehicle('construction')" data-vehicle="construction" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">🚧</span> <p class="text-xs mt-1">ဆောက်လုပ်ရေး</p></button> <button onclick="selectVehicle('bus')" data-vehicle="bus" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">🚌</span> <p class="text-xs mt-1">ခရီးသည်တင်</p></button> <button onclick="selectVehicle('cargo')" data-vehicle="cargo" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">🚛</span> <p class="text-xs mt-1">ကုန်တင်ယာဉ်</p></button> <button onclick="selectVehicle('ambulance')" data-vehicle="ambulance" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">🚑</span> <p class="text-xs mt-1">လူနာတင်/နိဗ္ဗာန်</p></button> <button onclick="selectVehicle('fuel')" data-vehicle="fuel" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">⛽</span> <p class="text-xs mt-1">ဆီ/ရေသယ်</p></button> <button onclick="selectVehicle('garbage')" data-vehicle="garbage" class="vehicle-btn bg-slate-700 hover:bg-slate-600 border-2 border-green-500/30 rounded-xl p-2 text-center transition-all"> <span class="text-xl">🗑️</span> <p class="text-xs mt-1">စည်ပင်ယာဉ်</p></button>
+     </div>
+    </section><!-- License Plate Input (Only for restricted vehicles) -->
+    <section id="plateSection" class="bg-slate-800/50 backdrop-blur rounded-2xl p-4 mb-4 border border-slate-700/50 hidden">
+     <label class="block text-amber-300 text-sm font-medium mb-2"> 🔢 ကားနံပါတ် ရှေ့ဆုံးဂဏန်း (၁ မှ ၉ အတွင်း) </label>
+     <p class="text-slate-400 text-xs mb-3">ဥပမာ - 9R-1234 ဆိုလျှင် "9" ရိုက်ထည့်ပါ</p>
+     <div class="grid grid-cols-9 gap-1">
+      <button onclick="selectPlateDigit(1)" data-digit="1" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၁</button> <button onclick="selectPlateDigit(2)" data-digit="2" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၂</button> <button onclick="selectPlateDigit(3)" data-digit="3" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၃</button> <button onclick="selectPlateDigit(4)" data-digit="4" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၄</button> <button onclick="selectPlateDigit(5)" data-digit="5" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၅</button> <button onclick="selectPlateDigit(6)" data-digit="6" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၆</button> <button onclick="selectPlateDigit(7)" data-digit="7" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၇</button> <button onclick="selectPlateDigit(8)" data-digit="8" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၈</button> <button onclick="selectPlateDigit(9)" data-digit="9" class="digit-btn bg-slate-700 hover:bg-amber-500 hover:text-slate-900 rounded-lg py-3 text-lg font-bold transition-all">၉</button>
+     </div>
+     <p id="selectedDigit" class="text-center text-slate-400 mt-2 text-sm"></p>
+    </section><!-- Result Area -->
+    <section id="resultSection" class="hidden flex-1">
+     <div id="resultCard" class="result-card rounded-2xl p-6 text-center">
+      <div id="resultIcon" class="text-6xl mb-3"></div>
+      <h2 id="resultTitle" class="text-xl font-bold mb-2"></h2>
+      <p id="resultMessage" class="text-lg mb-3"></p>
+      <div id="resultExplanation" class="text-sm opacity-80 bg-black/20 rounded-xl p-3"></div>
+     </div>
+    </section><!-- Footer -->
+    <footer class="text-center text-slate-500 text-xs mt-4 pt-4 border-t border-slate-700/50">
+     <p>⚠️ ဤအက်ပ်သည် အချက်အလက်ရည်ညွှန်းမှုသာဖြစ်ပါသည်။</p>
+     <p class="mt-1">တရားဝင်စည်းမျဉ်းများအတွက် သက်ဆိုင်ရာဌာနသို့ ဆက်သွယ်ပါ။</p>
+    </footer>
+   </div>
+  </div>
+  <script>
+    // State
+    let selectedVehicle = null;
+    let selectedPlate = null;
+    let selectedDate = null;
+
+    // Exempt vehicle types
+    const exemptVehicles = ['ev', 'taxi', 'delivery', 'construction', 'bus', 'cargo', 'ambulance', 'fuel', 'garbage'];
+    const restrictedVehicles = ['private_car', 'private_motorcycle'];
+
+    // Myanmar numerals
+    const myanmarNumerals = ['၀', '၁', '၂', '၃', '၄', '၅', '၆', '၇', '၈', '၉'];
+    const myanmarDays = ['တနင်္ဂနွေ', 'တနင်္လာ', 'အင်္ဂါ', 'ဗုဒ္ဓဟူး', 'ကြာသပတေး', 'သောကြာ', 'စနေ'];
+    const myanmarMonths = ['ဇန်နဝါရီ', 'ဖေဖော်ဝါရီ', 'မတ်', 'ဧပြီ', 'မေ', 'ဇွန်', 'ဇူလိုင်', 'သြဂုတ်', 'စက်တင်ဘာ', 'အောက်တိုဘာ', 'နိုဝင်ဘာ', 'ဒီဇင်ဘာ'];
+
+    // Config
+    const defaultConfig = {
+      app_title: 'ယာဉ်မောင်းနှင်ခွင့် စစ်ဆေးရန်',
+      allowed_message: 'ဒီနေ့ မောင်းလို့ရပါတယ်။',
+      restricted_message: 'ဒီနေ့ မောင်းရင် အဖမ်းခံရနိုင်ပါတယ်။',
+      primary_color: '#f59e0b',
+      secondary_color: '#1e293b',
+      text_color: '#ffffff',
+      accent_color: '#22c55e',
+      bg_color: '#0f172a'
+    };
+
+    function toMyanmarNumber(num) {
+      return String(num).split('').map(d => myanmarNumerals[parseInt(d)]).join('');
+    }
+
+    function formatMyanmarDate(date) {
+      const day = myanmarDays[date.getDay()];
+      const d = toMyanmarNumber(date.getDate());
+      const month = myanmarMonths[date.getMonth()];
+      const year = toMyanmarNumber(date.getFullYear());
+      return `${year} ခုနှစ်၊ ${month}လ ${d} ရက်၊ ${day}နေ့`;
+    }
+
+    function initDate() {
+      const today = new Date();
+      const dateInput = document.getElementById('dateInput');
+      dateInput.valueAsDate = today;
+      selectedDate = today;
+      updateDateDisplay();
+    }
+
+    function updateDateDisplay() {
+      const display = document.getElementById('dateDisplay');
+      display.textContent = formatMyanmarDate(selectedDate);
+    }
+
+    function selectVehicle(type) {
+      selectedVehicle = type;
+      selectedPlate = null;
+      
+      // Update UI
+      document.querySelectorAll('.vehicle-btn').forEach(btn => {
+        btn.classList.remove('ring-2', 'ring-amber-500', 'bg-amber-500/20');
+      });
+      const selectedBtn = document.querySelector(`[data-vehicle="${type}"]`);
+      if (selectedBtn) {
+        selectedBtn.classList.add('ring-2', 'ring-amber-500', 'bg-amber-500/20');
+      }
+
+      // Show/hide plate section
+      const plateSection = document.getElementById('plateSection');
+      if (restrictedVehicles.includes(type)) {
+        plateSection.classList.remove('hidden');
+        document.getElementById('selectedDigit').textContent = '';
+        document.querySelectorAll('.digit-btn').forEach(btn => {
+          btn.classList.remove('bg-amber-500', 'text-slate-900');
+        });
+      } else {
+        plateSection.classList.add('hidden');
+        checkAndShowResult();
+      }
+
+      // Hide result if restricted and no plate selected
+      if (restrictedVehicles.includes(type)) {
+        document.getElementById('resultSection').classList.add('hidden');
+      }
+    }
+
+    function selectPlateDigit(digit) {
+      selectedPlate = digit;
+      
+      // Update UI
+      document.querySelectorAll('.digit-btn').forEach(btn => {
+        btn.classList.remove('bg-amber-500', 'text-slate-900');
+      });
+      const selectedBtn = document.querySelector(`[data-digit="${digit}"]`);
+      if (selectedBtn) {
+        selectedBtn.classList.add('bg-amber-500', 'text-slate-900');
+      }
+
+      document.getElementById('selectedDigit').textContent = `ရွေးချယ်ထားသည် - ${toMyanmarNumber(digit)}`;
+      
+      checkAndShowResult();
+    }
+
+    function checkAndShowResult() {
+      if (!selectedVehicle) return;
+      
+      const resultSection = document.getElementById('resultSection');
+      const resultCard = document.getElementById('resultCard');
+      const resultIcon = document.getElementById('resultIcon');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultMessage = document.getElementById('resultMessage');
+      const resultExplanation = document.getElementById('resultExplanation');
+
+      const config = window.elementSdk?.config || defaultConfig;
+      let canDrive = false;
+      let explanation = '';
+
+      if (exemptVehicles.includes(selectedVehicle)) {
+        canDrive = true;
+        explanation = 'သင့်ယာဉ်သည် ကင်းလွတ်ခွင့်ရယာဉ်အမျိုးအစားဖြစ်သောကြောင့် နေ့တိုင်းမောင်းနှင်ခွင့်ရှိပါသည်။';
+      } else if (restrictedVehicles.includes(selectedVehicle) && selectedPlate) {
+        const dateOfMonth = selectedDate.getDate();
+        const isDateOdd = dateOfMonth % 2 === 1;
+        const isPlateOdd = selectedPlate % 2 === 1;
+
+        // Even plate cannot drive on odd dates
+        // Odd plate cannot drive on even dates
+        if (isPlateOdd) {
+          canDrive = isDateOdd; // Odd plate can drive on odd dates
+          if (!canDrive) {
+            explanation = `သင့်ကားနံပါတ် (${toMyanmarNumber(selectedPlate)}) သည် မ ဂဏန်းဖြစ်သောကြောင့် ခွင့်ပြုရက် (${toMyanmarNumber(dateOfMonth)}) တွင် မောင်းနှင်ခွင့်မရှိပါ။`;
+          } else {
+            explanation = `သင့်ကားနံပါတ် (${toMyanmarNumber(selectedPlate)}) သည် မ ဂဏန်းဖြစ်၍ မ ခွင့်ပြုရက် (${toMyanmarNumber(dateOfMonth)}) တွင် မောင်းနှင်ခွင့်ရှိပါသည်။`;
+          }
+        } else {
+          canDrive = !isDateOdd; // Even plate can drive on even dates
+          if (!canDrive) {
+            explanation = `သင့်ကားနံပါတ် (${toMyanmarNumber(selectedPlate)}) သည် စုံ ဂဏန်းဖြစ်သောကြောင့် မ ခွင့်ပြုရက် (${toMyanmarNumber(dateOfMonth)}) တွင် မောင်းနှင်ခွင့်မရှိပါ။`;
+          } else {
+            explanation = `သင့်ကားနံပါတ် (${toMyanmarNumber(selectedPlate)}) သည် စုံ ဂဏန်းဖြစ်၍ စုံ ခွင့်ပြုရက် (${toMyanmarNumber(dateOfMonth)}) တွင် မောင်းနှင်ခွင့်ရှိပါသည်။`;
+          }
+        }
+      } else {
+        return;
+      }
+
+      // Update result display
+      resultSection.classList.remove('hidden');
+      
+      if (canDrive) {
+        resultCard.className = 'result-card rounded-2xl p-6 text-center bg-gradient-to-br from-green-500 to-emerald-600 pulse-allowed';
+        resultIcon.textContent = '✅';
+        resultTitle.textContent = 'မောင်းနှင်ခွင့်ရှိပါသည်';
+        resultMessage.textContent = config.allowed_message || defaultConfig.allowed_message;
+      } else {
+        resultCard.className = 'result-card rounded-2xl p-6 text-center bg-gradient-to-br from-red-500 to-rose-600 pulse-restricted';
+        resultIcon.textContent = '⛔';
+        resultTitle.textContent = 'သတိပေးချက်';
+        resultMessage.textContent = config.restricted_message || defaultConfig.restricted_message;
+      }
+      
+      resultExplanation.textContent = explanation;
+    }
+
+    // Event Listeners
+    document.getElementById('dateInput').addEventListener('change', function(e) {
+      selectedDate = new Date(e.target.value);
+      updateDateDisplay();
+      if (selectedVehicle) {
+        if (exemptVehicles.includes(selectedVehicle) || selectedPlate) {
+          checkAndShowResult();
+        }
+      }
+    });
+
+    // Initialize
+    initDate();
+
+    // Element SDK Integration
+    async function onConfigChange(config) {
+      const titleEl = document.getElementById('app-title');
+      if (titleEl) {
+        titleEl.textContent = config.app_title || defaultConfig.app_title;
+      }
+      // Re-render result if visible
+      if (selectedVehicle && (exemptVehicles.includes(selectedVehicle) || selectedPlate)) {
+        checkAndShowResult();
+      }
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.bg_color || defaultConfig.bg_color,
+            set: (value) => { config.bg_color = value; window.elementSdk.setConfig({ bg_color: value }); }
+          },
+          {
+            get: () => config.secondary_color || defaultConfig.secondary_color,
+            set: (value) => { config.secondary_color = value; window.elementSdk.setConfig({ secondary_color: value }); }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => { config.text_color = value; window.elementSdk.setConfig({ text_color: value }); }
+          },
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => { config.primary_color = value; window.elementSdk.setConfig({ primary_color: value }); }
+          },
+          {
+            get: () => config.accent_color || defaultConfig.accent_color,
+            set: (value) => { config.accent_color = value; window.elementSdk.setConfig({ accent_color: value }); }
+          }
+        ],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ['app_title', config.app_title || defaultConfig.app_title],
+        ['allowed_message', config.allowed_message || defaultConfig.allowed_message],
+        ['restricted_message', config.restricted_message || defaultConfig.restricted_message]
+      ]);
+    }
+
+    // Initialize SDK
+    if (window.elementSdk) {
+      window.elementSdk.init({
+        defaultConfig,
+        onConfigChange,
+        mapToCapabilities,
+        mapToEditPanelValues
+      });
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9d71d5c9f746dac6',t:'MTc3MjYzNzMxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
